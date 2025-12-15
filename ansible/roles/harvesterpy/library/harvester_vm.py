@@ -7,6 +7,8 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
+global debug
+debug = False
 DOCUMENTATION = r'''
 ---
 module: harvester_vm
@@ -231,6 +233,9 @@ def build_vm_spec(module_params):
     """Build VM specification from module parameters"""
     name = module_params['name']
     namespace = module_params['namespace']
+
+    # Debug
+    global debug
     
     # If custom spec provided, use it
     if module_params.get('spec'):
@@ -243,21 +248,21 @@ def build_vm_spec(module_params):
             },
             'spec': module_params['spec']
         }
-        if module_params.get('labels'):
+        if module_params.get('labels', {}):
             vm_spec['metadata']['labels'] = module_params['labels']
         return vm_spec
     
     # Build basic spec
     disks = module_params.get('disks', [])
     networks = module_params.get('networks', [])
+    interfaces = module_params.get('interfaces', [])
+    # Fail if no networks defined
+    if not networks:
+        raise ValueError("At least one network configuration must be provided")
     
     # Default disk configuration
     if not disks:
         disks = [{'name': 'disk0', 'bus': 'virtio'}]
-    
-    # Default network configuration
-    if not networks:
-        networks = [{'name': 'default', 'type': 'pod'}]
     
     # Build disk devices and volumes
     disk_devices = []
@@ -277,34 +282,10 @@ def build_vm_spec(module_params):
                     'claimName': disk['volume_name']
                 }
             })
-    
-    # Build network interfaces and networks
-    interfaces = []
-    network_list = []
-    for network in networks:
-        net_name = network.get('name', 'default')
-        net_type = network.get('type', 'pod')
-        
-        if net_type == 'pod':
-            interfaces.append({
-                'name': net_name,
-                'masquerade': {}
-            })
-            network_list.append({
-                'name': net_name,
-                'pod': {}
-            })
-        elif net_type == 'multus':
-            interfaces.append({
-                'name': net_name,
-                'bridge': {}
-            })
-            network_list.append({
-                'name': net_name,
-                'multus': {
-                    'networkName': network.get('network_name', net_name)
-                }
-            })
+
+    # Fail if no networks defined
+    if not networks:
+        raise ValueError("At least one network configuration must be provided")
     
     vm_spec = {
         'apiVersion': 'kubevirt.io/v1',
@@ -314,6 +295,7 @@ def build_vm_spec(module_params):
             'namespace': namespace,
         },
         'spec': {
+            
             'running': module_params.get('running', True),
             'template': {
                 'metadata': {
@@ -330,15 +312,43 @@ def build_vm_spec(module_params):
                         'devices': {
                             'disks': disk_devices,
                             'interfaces': interfaces
+                        },
+                        'features': {
+                            'acpi': {
+                                'enabled': True
+                            }
+                        },
+                        'machine': {
+                            'type': 'q35'
+                        },
+                        'resources': {
+                            'requests': {
+                                'cpu': str(module_params.get('cpu_cores', 2)),
+                                'memory': module_params.get('memory', '4Gi'),
+                            },
+                            'limits': {
+                                'cpu': str(module_params.get('cpu_cores', 2)),
+                                'memory': module_params.get('memory', '4Gi'),
+                            }
                         }
+                            
+
                     },
-                    'networks': network_list,
+                    'networks': networks,
                     'volumes': volumes
                 }
             }
         }
     }
     
+    #Write to file for debug
+    if debug:
+        with open('/tmp/harvester_vm_spec_debug.json', 'w') as debug_file:
+            #Write as json
+            import json
+            json.dump(vm_spec, debug_file, indent=2)
+
+
     return vm_spec
 
 
@@ -360,8 +370,10 @@ def main():
             memory=dict(type='str', required=False, default='4Gi'),
             disks=dict(type='list', elements='dict', required=False),
             networks=dict(type='list', elements='dict', required=False),
-            labels=dict(type='dict', required=False),
+            interfaces=dict(type='list', elements='dict', required=False),
+            labels=dict(type='dict', required=False, default=None),
             spec=dict(type='dict', required=False),
+            debug=dict(type='bool', required=False, default=False),
         ),
         required_one_of=[
             ['token', 'username']
@@ -371,10 +383,13 @@ def main():
         ],
         supports_check_mode=True,
     )
-    
+    # Ensure labels is always a dict
+    if module.params.get('labels') is None:
+        module.params['labels'] = {}
+
     if not HAS_HARVESTERPY:
         module.fail_json(msg='harvesterpy Python library is required. Install with: pip install harvesterpy')
-    
+
     # Get parameters
     host = module.params['host']
     token = module.params.get('token')
@@ -385,13 +400,16 @@ def main():
     name = module.params['name']
     namespace = module.params['namespace']
     state = module.params['state']
-    
+
+    global debug
+    debug = module.params.get('debug', False)
+
     result = {
         'changed': False,
         'vm': {},
         'message': ''
     }
-    
+
     try:
         # Initialize Harvester client
         client = HarvesterClient(
@@ -402,7 +420,7 @@ def main():
             verify_ssl=verify_ssl,
             timeout=timeout
         )
-        
+
         # Check if VM exists
         vm_exists = False
         existing_vm = None
@@ -411,7 +429,7 @@ def main():
             vm_exists = True
         except HarvesterNotFoundError:
             vm_exists = False
-        
+
         if state == 'absent':
             if vm_exists:
                 if not module.check_mode:
@@ -420,10 +438,14 @@ def main():
                 result['message'] = f"VM '{name}' deleted"
             else:
                 result['message'] = f"VM '{name}' does not exist"
-        
+
         elif state == 'present':
             if not vm_exists:
                 vm_spec = build_vm_spec(module.params)
+                if debug:
+                    import pprint
+                    import sys
+                    sys.stderr.write("[DEBUG] vm_spec:\n" + pprint.pformat(vm_spec) + "\n")
                 if not module.check_mode:
                     result['vm'] = client.virtual_machines.create(vm_spec, namespace=namespace)
                 result['changed'] = True
@@ -431,7 +453,7 @@ def main():
             else:
                 result['vm'] = existing_vm
                 result['message'] = f"VM '{name}' already exists"
-        
+
         elif state == 'started':
             if not vm_exists:
                 module.fail_json(msg=f"VM '{name}' does not exist")
@@ -445,7 +467,7 @@ def main():
             else:
                 result['vm'] = existing_vm
                 result['message'] = f"VM '{name}' is already running"
-        
+
         elif state == 'stopped':
             if not vm_exists:
                 module.fail_json(msg=f"VM '{name}' does not exist")
@@ -459,7 +481,7 @@ def main():
             else:
                 result['vm'] = existing_vm
                 result['message'] = f"VM '{name}' is already stopped"
-        
+
         elif state == 'restarted':
             if not vm_exists:
                 module.fail_json(msg=f"VM '{name}' does not exist")
@@ -468,9 +490,9 @@ def main():
                 result['vm'] = client.virtual_machines.restart(name, namespace=namespace)
             result['changed'] = True
             result['message'] = f"VM '{name}' restarted"
-        
+
         module.exit_json(**result)
-        
+
     except HarvesterAuthenticationError as e:
         module.fail_json(msg=f"Authentication failed: {str(e)}")
     except HarvesterAPIError as e:
