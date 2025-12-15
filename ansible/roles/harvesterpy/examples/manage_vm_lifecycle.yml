@@ -4,10 +4,17 @@
   hosts: localhost
   gather_facts: false
   vars:
-    harvester_host: "https://harvester.example.com"
-    harvester_token: "your-api-token"
-    harvester_namespace: "default"
+    # Harvester settings will be loaded from .env file
     vm_name: "my-ubuntu-vm"
+
+
+  pre_tasks:
+    - name: Load Harvester settings from environment variables (use dotenv to export before running)
+      set_fact:
+        harvester_host: "{{ lookup('ansible.builtin.env', 'HARVESTER_HOST') }}"
+        harvester_token: "{{ lookup('ansible.builtin.env', 'HARVESTER_TOKEN') }}"
+        harvester_namespace: "{{ lookup('ansible.builtin.env', 'HARVESTER_NAMESPACE') | default('default') }}"
+        harvester_verify_ssl: "{{ lookup('ansible.builtin.env', 'HARVESTER_VERIFY_SSL') | default('true') }}"
   
   tasks:
     - name: Stop the virtual machine
