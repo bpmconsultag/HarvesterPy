@@ -62,8 +62,6 @@ Available variables are listed below, along with default values (see `defaults/m
 # Harvester API connection settings
 harvester_host: ""                    # Harvester host URL (required)
 harvester_token: ""                   # API token for authentication
-harvester_username: ""                # Username for basic authentication
-harvester_password: ""                # Password for basic authentication
 harvester_verify_ssl: true            # Verify SSL certificates
 harvester_timeout: 30                 # Request timeout in seconds
 

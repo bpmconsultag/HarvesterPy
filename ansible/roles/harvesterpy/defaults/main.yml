@@ -4,8 +4,6 @@
 # Harvester API connection settings
 harvester_host: ""
 harvester_token: ""
-harvester_username: ""
-harvester_password: ""
 harvester_verify_ssl: true
 harvester_timeout: 30
 
