@@ -1,7 +1,7 @@
 ---
 namespace: bpmconsultag
 name: harvesterpy
-version: 0.1.0
+version: 0.1.1
 readme: roles/harvesterpy/README.md
 
 authors:

@@ -11,7 +11,7 @@ DOCUMENTATION = r'''
 ---
 module: harvester_image
 short_description: Manage VM images in SUSE Harvester HCI
-version_added: "0.1.0"
+version_added: "0.1.1"
 description:
     - Create, update, or delete VM images in SUSE Harvester HCI.
     - This module uses the harvesterpy Python library.
@@ -99,7 +99,7 @@ options:
         required: false
         type: dict
 requirements:
-    - harvesterpy >= 0.1.0
+    - harvesterpy >= 0.1.1
 author:
     - bpmconsultag
 '''

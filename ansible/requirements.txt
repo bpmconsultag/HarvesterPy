@@ -1,2 +1,2 @@
 # Python requirements for the Ansible role
-harvesterpy>=0.1.0
+harvesterpy>=0.1.1
