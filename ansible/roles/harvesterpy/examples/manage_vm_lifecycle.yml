@@ -1,0 +1,46 @@
+---
+# Example playbook: Manage VM lifecycle (start, stop, restart)
+- name: Manage Harvester VM lifecycle
+  hosts: localhost
+  gather_facts: false
+  vars:
+    harvester_host: "https://harvester.example.com"
+    harvester_token: "your-api-token"
+    harvester_namespace: "default"
+    vm_name: "my-ubuntu-vm"
+  
+  tasks:
+    - name: Stop the virtual machine
+      harvester_vm:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "{{ vm_name }}"
+        namespace: "{{ harvester_namespace }}"
+        state: stopped
+      register: stop_result
+
+    - name: Wait for VM to stop
+      pause:
+        seconds: 10
+
+    - name: Start the virtual machine
+      harvester_vm:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "{{ vm_name }}"
+        namespace: "{{ harvester_namespace }}"
+        state: started
+      register: start_result
+
+    - name: Restart the virtual machine
+      harvester_vm:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "{{ vm_name }}"
+        namespace: "{{ harvester_namespace }}"
+        state: restarted
+      register: restart_result
+
+    - name: Display results
+      debug:
+        msg: "VM lifecycle operations completed successfully"

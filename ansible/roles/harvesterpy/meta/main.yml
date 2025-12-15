@@ -1,0 +1,27 @@
+---
+galaxy_info:
+  role_name: harvesterpy
+  author: bpmconsultag
+  description: Ansible role for managing SUSE Harvester HCI resources
+  company: bpmconsultag
+  license: MIT
+  min_ansible_version: "2.10"
+  platforms:
+    - name: EL
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - harvester
+    - hci
+    - virtualization
+    - vm
+    - suse
+    - infrastructure
+
+dependencies: []

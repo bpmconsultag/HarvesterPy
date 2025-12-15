@@ -1,0 +1,44 @@
+---
+# Example playbook: Clean up Harvester resources
+- name: Delete Harvester resources
+  hosts: localhost
+  gather_facts: false
+  vars:
+    harvester_host: "https://harvester.example.com"
+    harvester_token: "your-api-token"
+    harvester_namespace: "default"
+  
+  tasks:
+    - name: Delete virtual machine
+      harvester_vm:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "my-ubuntu-vm"
+        namespace: "{{ harvester_namespace }}"
+        state: absent
+      register: vm_delete_result
+      ignore_errors: true
+
+    - name: Delete volume
+      harvester_volume:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "my-vm-disk"
+        namespace: "{{ harvester_namespace }}"
+        state: absent
+      register: volume_delete_result
+      ignore_errors: true
+
+    - name: Delete image
+      harvester_image:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "ubuntu-20.04"
+        namespace: "{{ harvester_namespace }}"
+        state: absent
+      register: image_delete_result
+      ignore_errors: true
+
+    - name: Display cleanup results
+      debug:
+        msg: "Cleanup completed"

@@ -1,0 +1,37 @@
+---
+namespace: bpmconsultag
+name: harvesterpy
+version: 0.1.0
+readme: roles/harvesterpy/README.md
+
+authors:
+  - Mia Metzler <mia.metzler@bpm.ch>
+
+description: Ansible role and modules for managing SUSE Harvester HCI resources
+
+license:
+  - MIT
+
+tags:
+  - harvester
+  - hci
+  - virtualization
+  - vm
+  - suse
+  - infrastructure
+  - cloud
+
+repository: https://github.com/bpmconsultag/HarvesterPy
+documentation: https://github.com/bpmconsultag/HarvesterPy/tree/main/ansible
+homepage: https://github.com/bpmconsultag/HarvesterPy
+issues: https://github.com/bpmconsultag/HarvesterPy/issues
+
+dependencies: {}
+
+build_ignore:
+  - "*.pyc"
+  - "*.pyo"
+  - ".git"
+  - ".gitignore"
+  - "__pycache__"
+  - ".pytest_cache"

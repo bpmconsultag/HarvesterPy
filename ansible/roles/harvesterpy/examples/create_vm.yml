@@ -1,0 +1,69 @@
+---
+# Example playbook: Create a virtual machine in Harvester
+- name: Create and manage Harvester VM
+  hosts: localhost
+  gather_facts: false
+  vars:
+    #harvester_host: "https://harvester.example.com"
+    #harvester_token: "your-api-token"
+    #harvester_namespace: "default"
+    vm_name: "my-ubuntu-vm3"
+  
+  tasks:
+    - name: Create an image for the VM
+      harvester_image:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "ubuntu-20.04"
+        namespace: "{{ harvester_namespace }}"
+        state: present
+        url: "https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img"
+        display_name: "Ubuntu 20.04 LTS"
+        description: "Ubuntu 20.04 cloud image"
+        verify_ssl: "{{ harvester_verify_ssl }}"
+      register: image_result
+
+    - name: Create a volume for the VM
+      harvester_volume:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "{{ vm_name }}-disk"
+        namespace: "{{ harvester_namespace }}"
+        state: present
+        storage: "3Gi"
+        access_modes:
+          - ReadWriteMany
+        volume_mode: Block
+        storage_class: "longhorn-ubuntu-20.04"
+        volume_name: ""
+        labels: {}
+        image: "ubuntu-24.04-server-cloudimg-amd64-lvm.img"
+        verify_ssl: "{{ harvester_verify_ssl }}"
+      register: volume_result
+
+    - name: Create a virtual machine
+      harvester_vm:
+        host: "{{ harvester_host }}"
+        token: "{{ harvester_token }}"
+        name: "{{ vm_name }}"
+        namespace: "{{ harvester_namespace }}"
+        state: present
+        running: true
+        cpu_cores: 2
+        memory: "4Gi"
+        disks:
+          - name: disk0
+            volume_name: "{{ vm_name }}-disk"
+            bus: virtio
+        networks:
+          - name: default
+            type: pod
+        labels:
+          app: web-server
+          environment: production
+        verify_ssl: "{{ harvester_verify_ssl }}"
+      register: vm_result
+
+    - name: Display VM information
+      debug:
+        msg: "VM '{{ vm_result.vm.metadata.name }}' has been {{ vm_result.message }}"

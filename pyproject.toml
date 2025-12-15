@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harvesterpy"
+version = "0.1.0"
+description = "A Python library to interface with SUSE Harvester HCI"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "bpmconsultag"}
+]
+dependencies = [
+    "requests>=2.25.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/bpmconsultag/HarvesterPy"
+Repository = "https://github.com/bpmconsultag/HarvesterPy"

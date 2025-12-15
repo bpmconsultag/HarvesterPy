@@ -1,0 +1,20 @@
+---
+# Main tasks file for harvesterpy role
+
+- name: Ensure harvesterpy Python library is installed
+  pip:
+    name: harvesterpy
+    state: present
+  delegate_to: localhost
+  run_once: true
+  tags:
+    - harvester
+    - setup
+
+- name: Display Harvester connection info
+  debug:
+    msg: "Connecting to Harvester at {{ harvester_host }}"
+  when: harvester_host is defined and harvester_host != ""
+  tags:
+    - harvester
+    - debug
