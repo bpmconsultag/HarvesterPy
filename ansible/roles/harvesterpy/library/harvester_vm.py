@@ -5,13 +5,6 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-
-
-import hashlib
-import random
-import string
-
-
 DOCUMENTATION = r'''
 ---
 module: harvester_vm
@@ -312,7 +305,7 @@ def build_vm_spec(module_params, debug=False):
     interfaces = module_params.get('interfaces', [])
     # Fail if no networks defined
     if not networks:
-        raise ValueError("At least one network configuration must be provided")
+        raise ValueError("At least one network configuration must be provided in the 'networks' parameter")
     
     # Default disk configuration
     if not disks:
@@ -365,7 +358,7 @@ def build_vm_spec(module_params, debug=False):
                 )
                 cloud_init_volume['cloudInitNoCloud']['userData'] = user_data_str
             except ImportError:
-                raise ImportError('PyYAML is required for cloud-init userData YAML conversion. Please install with pip install pyyaml')
+                raise ImportError('PyYAML is required for cloud-init userData YAML conversion. Please install it with pip install PyYAML')
         
         # Handle network_data if provided
         if 'network_data' in cloud_init_config:
@@ -378,7 +371,7 @@ def build_vm_spec(module_params, debug=False):
                 )
                 cloud_init_volume['cloudInitNoCloud']['networkData'] = network_data_str
             except ImportError:
-                raise ImportError('PyYAML is required for cloud-init networkData YAML conversion. Please install with pip install pyyaml')
+                raise ImportError('PyYAML is required for cloud-init networkData YAML conversion. Please install it with pip install PyYAML')
         
         # Only add cloud-init disk if we have any data
         if 'userData' in cloud_init_volume['cloudInitNoCloud'] or 'networkData' in cloud_init_volume['cloudInitNoCloud']:
