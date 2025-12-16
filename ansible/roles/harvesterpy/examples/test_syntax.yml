@@ -5,6 +5,15 @@
   hosts: localhost
   gather_facts: false
   
+
+  pre_tasks:
+    - name: Load Harvester settings from environment variables (use dotenv to export before running)
+      set_fact:
+        harvester_host: "{{ lookup('ansible.builtin.env', 'HARVESTER_HOST') }}"
+        harvester_token: "{{ lookup('ansible.builtin.env', 'HARVESTER_TOKEN') }}"
+        harvester_namespace: "{{ lookup('ansible.builtin.env', 'HARVESTER_NAMESPACE') | default('default') }}"
+        harvester_verify_ssl: "{{ lookup('ansible.builtin.env', 'HARVESTER_VERIFY_SSL') | default('true') }}"
+
   tasks:
     - name: Display test information
       debug:
