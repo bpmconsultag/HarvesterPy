@@ -452,16 +452,6 @@ def build_vm_spec(module_params):
 
     return vm_spec
 
-def password_hash(password, salt=None):
-    """
-    Generate a SHA-512 hashed password for cloud-init.
-    If salt is not provided, generate a random 16-character salt.
-    """
-    if salt is None:
-        salt = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-    # SHA-512 crypt format: $6$salt
-    return hashlib.sha512((salt + password).encode('utf-8')).hexdigest()
-
 def main():
     module = AnsibleModule(
         argument_spec=dict(
