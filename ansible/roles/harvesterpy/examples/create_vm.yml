@@ -5,7 +5,7 @@
   gather_facts: false
   vars:
     # Harvester settings will be loaded from .env file
-    vm_name: "my-ubuntu-vm4"
+    vm_name: "my-ubuntu-vm7"
 
 
   pre_tasks:
@@ -79,6 +79,41 @@
         labels:
           #app: web-server
           #environment: production
+        cloud_init:
+          user_data:
+            hostname: "{{ vm_name }}"
+            network:
+              version: 2
+              ethernets:
+                eth0:
+                  dhcp4: true
+                  nameservers:
+                    addresses:
+                      #Replace with your DNS servers
+                      - 172.16.100.12
+                      - 172.16.100.16
+            resolv_conf:
+              nameservers:
+                #Replace with your DNS servers
+                - 172.16.100.12
+                - 172.16.100.16
+            users:
+              - name: ubuntu
+                #ssh_authorized_keys:
+                #  - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCy..."
+                sudo: "ALL=(ALL) NOPASSWD:ALL"
+                shell: /bin/bash
+                # Password hashed using SHA-512 (generated raw with: mkpasswd --method=SHA-512)
+                # Default password: ubuntu (change on first login)
+                # You might have to install passlib to generate password hashes: apt install -y passlib or arch linux: pacman -S python-passlib
+                passwd: "{{ 'ubuntu' | password_hash('sha512', 'mysecretsalt') }}"
+                lock_passwd: false
+            package_update: true
+            package_upgrade: true
+            packages:
+              - qemu-guest-agent
+            runcmd:
+              - systemctl enable --now qemu-guest-agent || true
         verify_ssl: "{{ harvester_verify_ssl }}"
       register: vm_result
 

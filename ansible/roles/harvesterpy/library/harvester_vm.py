@@ -1,11 +1,16 @@
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2024, bpmconsultag
 # MIT License
 
-from __future__ import absolute_import, division, print_function
-__metaclass__ = type
+
+import hashlib
+import random
+import string
+
 
 global debug
 debug = False
@@ -108,6 +113,28 @@ options:
             - Complete VM specification (advanced usage)
         required: false
         type: dict
+    cloud_init:
+        description:
+            - Cloud-init configuration for the VM
+            - If not provided, no cloud-init will be configured
+        required: false
+        type: dict
+        suboptions:
+            user_data:
+                description:
+                    - Cloud-init user data (will be converted to YAML)
+                required: false
+                type: dict
+            user_data_raw:
+                description:
+                    - Raw cloud-init user data string (takes precedence over user_data)
+                required: false
+                type: str
+            network_data:
+                description:
+                    - Cloud-init network data
+                required: false
+                type: dict
 requirements:
     - harvesterpy >= 0.1.1
 author:
@@ -188,6 +215,38 @@ EXAMPLES = r'''
             - name: disk0
               persistentVolumeClaim:
                 claimName: my-volume
+
+# Create VM with cloud-init configuration
+- name: Create VM with cloud-init
+  harvester_vm:
+    host: "https://harvester.example.com"
+    token: "your-api-token"
+    name: "my-vm"
+    namespace: "default"
+    cpu_cores: 2
+    memory: "4Gi"
+    disks:
+      - name: disk0
+        volume_name: my-volume
+        bus: virtio
+    networks:
+      - name: default
+        multus:
+          networkName: default/br-clients
+    cloud_init:
+      user_data:
+        hostname: my-vm
+        users:
+          - name: ubuntu
+            ssh_authorized_keys:
+              - ssh-ed25519 AAAAC3... user@example.com
+            sudo: ALL=(ALL) NOPASSWD:ALL
+            shell: /bin/bash
+        package_update: true
+        packages:
+          - qemu-guest-agent
+        runcmd:
+          - systemctl enable --now qemu-guest-agent
 '''
 
 RETURN = r'''
@@ -283,6 +342,59 @@ def build_vm_spec(module_params):
                 }
             })
 
+    #
+    
+    # Add cloud-init disk if cloud_init configuration is provided
+    cloud_init_config = module_params.get('cloud_init')
+    if cloud_init_config:
+        cloud_init_volume = {
+            'name': 'cloudinitdisk',
+            'cloudInitNoCloud': {}
+        }
+        
+        # Handle user_data (raw takes precedence)
+        if 'user_data_raw' in cloud_init_config:
+            user_data_str = cloud_init_config['user_data_raw']
+            # Ensure it starts with #cloud-config if not already present
+            if not user_data_str.startswith('#cloud-config'):
+                user_data_str = '#cloud-config\n' + user_data_str
+            cloud_init_volume['cloudInitNoCloud']['userData'] = user_data_str
+        elif 'user_data' in cloud_init_config:
+            # Convert user_data dict to YAML string
+            try:
+                import yaml
+                user_data_str = '#cloud-config\n' + yaml.dump(
+                    cloud_init_config['user_data'], 
+                    default_flow_style=False,
+                    sort_keys=False
+                )
+                cloud_init_volume['cloudInitNoCloud']['userData'] = user_data_str
+            except ImportError:
+                raise ImportError('PyYAML is required for cloud-init userData YAML conversion. Please install with pip install pyyaml')
+        
+        # Handle network_data if provided
+        if 'network_data' in cloud_init_config:
+            try:
+                import yaml
+                network_data_str = yaml.dump(
+                    cloud_init_config['network_data'],
+                    default_flow_style=False,
+                    sort_keys=False
+                )
+                cloud_init_volume['cloudInitNoCloud']['networkData'] = network_data_str
+            except ImportError:
+                raise ImportError('PyYAML is required for cloud-init networkData YAML conversion. Please install with pip install pyyaml')
+        
+        # Only add cloud-init disk if we have any data
+        if 'userData' in cloud_init_volume['cloudInitNoCloud'] or 'networkData' in cloud_init_volume['cloudInitNoCloud']:
+            volumes.append(cloud_init_volume)
+            disk_devices.append({
+                'name': 'cloudinitdisk',
+                'disk': {
+                    'bus': 'virtio'
+                }
+            })
+
     # Fail if no networks defined
     if not networks:
         raise ValueError("At least one network configuration must be provided")
@@ -299,6 +411,10 @@ def build_vm_spec(module_params):
             'running': module_params.get('running', True),
             'template': {
                 'metadata': {
+                    'annotations': {
+                        #To be implemented: SSH key injection
+                        'harvesterhci.io/sshNames': '[]'
+                    },
                     'labels': module_params.get('labels', {})
                 },
                 'spec': {
@@ -351,6 +467,15 @@ def build_vm_spec(module_params):
 
     return vm_spec
 
+def password_hash(password, salt=None):
+    """
+    Generate a SHA-512 hashed password for cloud-init.
+    If salt is not provided, generate a random 16-character salt.
+    """
+    if salt is None:
+        salt = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    # SHA-512 crypt format: $6$salt
+    return hashlib.sha512((salt + password).encode('utf-8')).hexdigest()
 
 def main():
     module = AnsibleModule(
@@ -373,6 +498,7 @@ def main():
             interfaces=dict(type='list', elements='dict', required=False),
             labels=dict(type='dict', required=False, default=None),
             spec=dict(type='dict', required=False),
+            cloud_init=dict(type='dict', required=False, default=None),
             debug=dict(type='bool', required=False, default=False),
         ),
         required_one_of=[
