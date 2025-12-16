@@ -107,7 +107,9 @@
                 # Password hashed using SHA-512 (generated raw with: mkpasswd --method=SHA-512)
                 # Default password: ubuntu (change on first login)
                 # You might have to install passlib to generate password hashes: apt install -y passlib or arch linux: pacman -S python-passlib
-                passwd: "{{ 'ubuntu' | password_hash('sha512', 'mysecretsalt') }}"
+                # SECURITY WARNING: Using password_hash without a salt uses a random salt (recommended)
+                # Alternatively, load salt from an encrypted vault file: "{{ 'ubuntu' | password_hash('sha512', lookup('ansible.builtin.env', 'PASSWORD_SALT')) }}"
+                passwd: "{{ 'ubuntu' | password_hash('sha512') }}"
                 lock_passwd: false
             package_update: true
             package_upgrade: true

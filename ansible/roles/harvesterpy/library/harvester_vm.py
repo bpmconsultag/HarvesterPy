@@ -264,6 +264,9 @@ message:
     type: str
 '''
 
+import pprint
+import sys
+
 from ansible.module_utils.basic import AnsibleModule
 
 try:
@@ -277,6 +280,12 @@ try:
     HAS_HARVESTERPY = True
 except ImportError:
     HAS_HARVESTERPY = False
+
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
 
 
 def build_vm_spec(module_params, debug=False):
@@ -349,29 +358,25 @@ def build_vm_spec(module_params, debug=False):
             cloud_init_volume['cloudInitNoCloud']['userData'] = user_data_str
         elif 'user_data' in cloud_init_config:
             # Convert user_data dict to YAML string
-            try:
-                import yaml
-                user_data_str = '#cloud-config\n' + yaml.dump(
-                    cloud_init_config['user_data'], 
-                    default_flow_style=False,
-                    sort_keys=False
-                )
-                cloud_init_volume['cloudInitNoCloud']['userData'] = user_data_str
-            except ImportError:
+            if not HAS_YAML:
                 raise ImportError('PyYAML is required for cloud-init userData YAML conversion. Please install it with pip install PyYAML')
+            user_data_str = '#cloud-config\n' + yaml.dump(
+                cloud_init_config['user_data'], 
+                default_flow_style=False,
+                sort_keys=False
+            )
+            cloud_init_volume['cloudInitNoCloud']['userData'] = user_data_str
         
         # Handle network_data if provided
         if 'network_data' in cloud_init_config:
-            try:
-                import yaml
-                network_data_str = yaml.dump(
-                    cloud_init_config['network_data'],
-                    default_flow_style=False,
-                    sort_keys=False
-                )
-                cloud_init_volume['cloudInitNoCloud']['networkData'] = network_data_str
-            except ImportError:
+            if not HAS_YAML:
                 raise ImportError('PyYAML is required for cloud-init networkData YAML conversion. Please install it with pip install PyYAML')
+            network_data_str = yaml.dump(
+                cloud_init_config['network_data'],
+                default_flow_style=False,
+                sort_keys=False
+            )
+            cloud_init_volume['cloudInitNoCloud']['networkData'] = network_data_str
         
         # Only add cloud-init disk if we have any data
         if 'userData' in cloud_init_volume['cloudInitNoCloud'] or 'networkData' in cloud_init_volume['cloudInitNoCloud']:
@@ -529,8 +534,6 @@ def main():
             if not vm_exists:
                 vm_spec = build_vm_spec(module.params, debug=debug)
                 if debug:
-                    import pprint
-                    import sys
                     sys.stderr.write("[DEBUG] vm_spec:\n" + pprint.pformat(vm_spec) + "\n")
                 if not module.check_mode:
                     result['vm'] = client.virtual_machines.create(vm_spec, namespace=namespace)
