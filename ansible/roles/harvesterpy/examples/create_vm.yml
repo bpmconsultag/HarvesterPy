@@ -77,8 +77,7 @@
             multus:
               networkName: "default/{{ harvester_network }}"
         labels:
-          #app: web-server
-          #environment: production
+          # Add any desired labels here
         cloud_init:
           user_data:
             hostname: "{{ vm_name }}"
@@ -99,6 +98,8 @@
                 - 172.16.100.16
             users:
               - name: ubuntu
+
+                # To enable SSH key authentication, uncomment and add your public keys here
                 #ssh_authorized_keys:
                 #  - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCy..."
                 sudo: "ALL=(ALL) NOPASSWD:ALL"

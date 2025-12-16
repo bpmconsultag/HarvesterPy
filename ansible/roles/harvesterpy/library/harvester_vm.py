@@ -1,10 +1,10 @@
-from __future__ import absolute_import, division, print_function
-__metaclass__ = type
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 # Copyright: (c) 2024, bpmconsultag
 # MIT License
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
 
 
 import hashlib
@@ -395,10 +395,6 @@ def build_vm_spec(module_params):
                 }
             })
 
-    # Fail if no networks defined
-    if not networks:
-        raise ValueError("At least one network configuration must be provided")
-    
     vm_spec = {
         'apiVersion': 'kubevirt.io/v1',
         'kind': 'VirtualMachine',
@@ -407,12 +403,11 @@ def build_vm_spec(module_params):
             'namespace': namespace,
         },
         'spec': {
-            
             'running': module_params.get('running', True),
             'template': {
                 'metadata': {
                     'annotations': {
-                        #To be implemented: SSH key injection
+                        # To be implemented: SSH key injection
                         'harvesterhci.io/sshNames': '[]'
                     },
                     'labels': module_params.get('labels', {})
@@ -447,8 +442,6 @@ def build_vm_spec(module_params):
                                 'memory': module_params.get('memory', '4Gi'),
                             }
                         }
-                            
-
                     },
                     'networks': networks,
                     'volumes': volumes
@@ -456,14 +449,6 @@ def build_vm_spec(module_params):
             }
         }
     }
-    
-    #Write to file for debug
-    if debug:
-        with open('/tmp/harvester_vm_spec_debug.json', 'w') as debug_file:
-            #Write as json
-            import json
-            json.dump(vm_spec, debug_file, indent=2)
-
 
     return vm_spec
 
@@ -488,8 +473,7 @@ def main():
             timeout=dict(type='int', required=False, default=30),
             name=dict(type='str', required=True),
             namespace=dict(type='str', required=False, default='default'),
-            state=dict(type='str', required=False, default='present',
-                      choices=['present', 'absent', 'started', 'stopped', 'restarted']),
+            state=dict(type='str', required=False, default='present', choices=['present', 'absent', 'started', 'stopped', 'restarted']),
             running=dict(type='bool', required=False, default=True),
             cpu_cores=dict(type='int', required=False, default=2),
             memory=dict(type='str', required=False, default='4Gi'),
