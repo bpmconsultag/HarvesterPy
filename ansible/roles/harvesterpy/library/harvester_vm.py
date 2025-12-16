@@ -9,7 +9,7 @@ DOCUMENTATION = r'''
 ---
 module: harvester_vm
 short_description: Manage virtual machines in SUSE Harvester HCI
-version_added: "0.1.1"
+version_added: "0.1.2"
 description:
     - Create, update, start, stop, restart, or delete virtual machines in SUSE Harvester HCI.
     - This module uses the harvesterpy Python library.
@@ -127,7 +127,7 @@ options:
                 required: false
                 type: dict
 requirements:
-    - harvesterpy >= 0.1.1
+    - harvesterpy >= 0.1.2
 author:
     - bpmconsultag
 '''

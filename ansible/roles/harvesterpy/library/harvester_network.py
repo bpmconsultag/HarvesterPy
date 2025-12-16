@@ -11,7 +11,7 @@ DOCUMENTATION = r'''
 ---
 module: harvester_network
 short_description: Manage networks in SUSE Harvester HCI
-version_added: "0.1.1"
+version_added: "0.1.2"
 description:
     - Create, update, or delete network attachment definitions in SUSE Harvester HCI.
     - This module uses the harvesterpy Python library.
@@ -77,7 +77,7 @@ options:
         required: false
         type: dict
 requirements:
-    - harvesterpy >= 0.1.1
+    - harvesterpy >= 0.1.2
 author:
     - bpmconsultag
 '''
