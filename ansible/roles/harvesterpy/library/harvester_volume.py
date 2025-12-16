@@ -11,7 +11,7 @@ DOCUMENTATION = r'''
 ---
 module: harvester_volume
 short_description: Manage volumes in SUSE Harvester HCI
-version_added: "0.1.3"
+version_added: "0.1.4"
 description:
     - Create, update, or delete persistent volumes in SUSE Harvester HCI.
     - This module uses the harvesterpy Python library.
@@ -97,7 +97,7 @@ options:
         required: false
         type: dict
 requirements:
-    - harvesterpy >= 0.1.3
+    - harvesterpy >= 0.1.4
 author:
     - bpmconsultag
 '''
