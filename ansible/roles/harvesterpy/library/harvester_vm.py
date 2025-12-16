@@ -12,8 +12,6 @@ import random
 import string
 
 
-global debug
-debug = False
 DOCUMENTATION = r'''
 ---
 module: harvester_vm
@@ -288,13 +286,10 @@ except ImportError:
     HAS_HARVESTERPY = False
 
 
-def build_vm_spec(module_params):
+def build_vm_spec(module_params, debug=False):
     """Build VM specification from module parameters"""
     name = module_params['name']
     namespace = module_params['namespace']
-
-    # Debug
-    global debug
     
     # If custom spec provided, use it
     if module_params.get('spec'):
@@ -500,8 +495,6 @@ def main():
     name = module.params['name']
     namespace = module.params['namespace']
     state = module.params['state']
-
-    global debug
     debug = module.params.get('debug', False)
 
     result = {
@@ -541,7 +534,7 @@ def main():
 
         elif state == 'present':
             if not vm_exists:
-                vm_spec = build_vm_spec(module.params)
+                vm_spec = build_vm_spec(module.params, debug=debug)
                 if debug:
                     import pprint
                     import sys
