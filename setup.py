@@ -14,7 +14,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="harvesterpy",
-    version="0.1.2",
+    version="0.1.3",
     author="bpmconsultag",
     description="A Python library to interface with SUSE Harvester HCI",
     long_description=long_description,
